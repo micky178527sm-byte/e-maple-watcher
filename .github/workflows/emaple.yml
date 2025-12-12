@@ -7,6 +7,10 @@ on:
 
 permissions:
   contents: write
+  
+concurrency:
+  group: emaple-watcher
+  cancel-in-progress: true
 
 jobs:
   watch:
@@ -28,14 +32,22 @@ jobs:
           OPEN_URL: "http://www.e-maple.net/classified.html?area=MO&cat=WO"
         run: python watcher.py
 
-      - name: Commit state if changed
+            - name: Commit state if changed
         run: |
           if git diff --quiet; then
             echo "no changes to commit"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add state.json
-            git commit -m "Update state"
-            git push
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add state.json
+          git commit -m "Update state" || true
+
+          # 先にリモート更新を取り込み（衝突しにくくする）
+          git pull --rebase --autostash origin main
+
+          # push
+          git push
           fi
