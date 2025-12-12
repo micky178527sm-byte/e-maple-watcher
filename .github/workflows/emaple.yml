@@ -1,0 +1,41 @@
+name: e-maple watcher
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run watcher
+        env:
+          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+          WATCH_URL: "http://www.e-maple.net/classified.html?area=MO&cat=WO"
+          OPEN_URL:  "http://www.e-maple.net/classified.html?area=MO&cat=WO"
+        run: python watcher.py
+
+      - name: Commit state if changed
+        run: |
+          if git diff --quiet; then
+            echo "no changes to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "Update state"
+            git push
+          fi
