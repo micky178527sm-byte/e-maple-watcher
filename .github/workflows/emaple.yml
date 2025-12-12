@@ -1,9 +1,9 @@
 name: e-maple watcher
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "3-59/10 * * * *"
-  workflow_dispatch:
 
 permissions:
   contents: write
